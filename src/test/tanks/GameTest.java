@@ -21,24 +21,24 @@ class GameTest {
 
     private enum Event {TANK_MOVED, TANK_SKIPPED_MOVE, TANK_SHOT, GAME_OVER, BULLET_CHANGED_CELL}
 
-    private List<Pare<Event, Tank>> events = new ArrayList<>();
-    private List<Pare<Event, Tank>> expectedEvents = new ArrayList<>();
+    private List<Pare<Event, Unit>> events = new ArrayList<>();
+    private List<Pare<Event, Unit>> expectedEvents = new ArrayList<>();
 
     private class EventListener implements GameActionListener {
 
         @Override
         public void tankMoved(@NotNull GameActionEvent event) {
-            events.add(new Pare<>(Event.TANK_MOVED, event.getTank()));
+            events.add(new Pare<>(Event.TANK_MOVED, event.getUnit()));
         }
 
         @Override
         public void tankSkippedMove(@NotNull GameActionEvent event) {
-            events.add(new Pare<>(Event.TANK_SKIPPED_MOVE, event.getTank()));
+            events.add(new Pare<>(Event.TANK_SKIPPED_MOVE, event.getUnit()));
         }
 
         @Override
         public void tankShot(@NotNull GameActionEvent event) {
-            events.add(new Pare<>(Event.TANK_SHOT, event.getTank()));
+            events.add(new Pare<>(Event.TANK_SHOT, event.getUnit()));
         }
 
         @Override
@@ -49,6 +49,26 @@ class GameTest {
         @Override
         public void bulletChangedCell(@NotNull GameActionEvent event) {
             events.add(new Pare<>(Event.BULLET_CHANGED_CELL, null));
+        }
+
+        @Override
+        public void tankChangedDirection(@NotNull GameActionEvent event) {
+
+        }
+
+        @Override
+        public void tankActivityChanged(@NotNull GameActionEvent event) {
+
+        }
+
+        @Override
+        public void damageCaused(@NotNull GameActionEvent event) {
+
+        }
+
+        @Override
+        public void objectDestroyed(@NotNull GameActionEvent event) {
+
         }
     }
 
@@ -146,6 +166,8 @@ class GameTest {
         expectedEvents.add(new Pare<>(Event.BULLET_CHANGED_CELL, null));
         expectedEvents.add(new Pare<>(Event.BULLET_CHANGED_CELL, null));
         expectedEvents.add(new Pare<>(Event.GAME_OVER, null));
+
+
 
         assertNull(game.activeTank());
         assertFalse(tank.isActive());

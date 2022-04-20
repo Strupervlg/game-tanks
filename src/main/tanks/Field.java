@@ -36,6 +36,13 @@ public class Field {
         this._cells.putAll(cells);
     }
 
+    public int getHeight() {
+        return _height;
+    }
+
+    public int getWidth() {
+        return _width;
+    }
 
     // ------------------------------- Клетки ---------------------------------
     private Map<CellPosition, AbstractCell> _cells = new HashMap<>();

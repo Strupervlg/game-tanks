@@ -48,7 +48,7 @@ class BaseTest {
         Field field = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
 
         Team team = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, new BaseObserverTest());
         base = team.getBase();
     }
 

@@ -13,4 +13,12 @@ public interface TankActionListener extends EventListener {
     void tankShot(@NotNull TankActionEvent event);
 
     void bulletChangedCell(@NotNull TankActionEvent event);
+
+    void tankChangedDirection(@NotNull TankActionEvent event);
+
+    void tankActivityChanged(@NotNull TankActionEvent event);
+
+    void damageCaused(@NotNull TankActionEvent event);
+
+    void objectDestroyed(@NotNull TankActionEvent event);
 }

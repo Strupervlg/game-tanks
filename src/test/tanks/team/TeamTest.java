@@ -49,7 +49,7 @@ class TeamTest {
         field = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
 
         team = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, new BaseObserverTest());
     }
 
 
@@ -61,7 +61,7 @@ class TeamTest {
 
         //Проверка
         assertThrows(NullPointerException.class, () -> new Team(tankPosition, basePosition,
-                1, 0, Direction.north(), field));
+                1, 0, Direction.north(), field, new BaseObserverTest()));
     }
 
     @Test
@@ -72,7 +72,7 @@ class TeamTest {
 
         //Проверка
         assertThrows(NullPointerException.class, () -> new Team(tankPosition, basePosition,
-                1, 0, Direction.north(), field));
+                1, 0, Direction.north(), field, new BaseObserverTest()));
     }
 
     @Test
@@ -108,7 +108,7 @@ class TeamTest {
         Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH, FIELD_HEIGHT);
         Field otherField = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
         Team team2 = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), otherField);
+                1, 0, Direction.north(), otherField, new BaseObserverTest());
 
         //Проверка
         assertThrows(IllegalArgumentException.class, () -> team2.replaceField(field));
@@ -120,7 +120,7 @@ class TeamTest {
         Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH+1, FIELD_HEIGHT+1);
         Field otherField = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
         Team team2 = new Team(new CellPosition(9,9), new CellPosition(0,1),
-                1, 0, Direction.north(), otherField);
+                1, 0, Direction.north(), otherField, new BaseObserverTest());
 
         //Проверка
         assertThrows(NullPointerException.class, () -> team2.replaceField(field));
@@ -132,7 +132,7 @@ class TeamTest {
         Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH+1, FIELD_HEIGHT+1);
         Field otherField = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
         Team team2 = new Team(new CellPosition(1,1), new CellPosition(9,9),
-                1, 0, Direction.north(), otherField);
+                1, 0, Direction.north(), otherField, new BaseObserverTest());
 
         //Проверка
         assertThrows(NullPointerException.class, () -> team2.replaceField(field));

@@ -1,14 +1,33 @@
 package tanks.event;
 
 import org.jetbrains.annotations.NotNull;
-import tanks.team.Tank;
+import tanks.AbstractCell;
+import tanks.Unit;
 
 import java.util.EventObject;
 
 public class GameActionEvent extends EventObject {
 
     // ------------------ Tank ------------------
-    private Tank _tank;
+    private Unit _unit;
+    private AbstractCell fromCell;
+    private AbstractCell toCell;
+
+    public void setFromCell(AbstractCell fromCell) {
+        this.fromCell = fromCell;
+    }
+
+    public AbstractCell getFromCell() {
+        return fromCell;
+    }
+
+    public void setToCell(AbstractCell toCell) {
+        this.toCell = toCell;
+    }
+
+    public AbstractCell getToCell() {
+        return toCell;
+    }
 
     /**
      * Constructs a prototypical Event.
@@ -20,12 +39,12 @@ public class GameActionEvent extends EventObject {
         super(source);
     }
 
-    public void setTank(@NotNull Tank tank) {
-        this._tank = tank;
+    public void setUnit(@NotNull Unit unit) {
+        this._unit = unit;
     }
 
-    public Tank getTank() {
-        return this._tank;
+    public Unit getUnit() {
+        return this._unit;
     }
 
 }

@@ -2,11 +2,13 @@ package tanks.team;
 
 import org.jetbrains.annotations.NotNull;
 import tanks.*;
+import tanks.event.BaseActionListener;
 
 public class Team {
 
     public Team(@NotNull CellPosition tankPosition, @NotNull CellPosition basePosition,
-                int liveTank, int rechargeTank, @NotNull Direction currentDirectionTank, @NotNull Field field) {
+                int liveTank, int rechargeTank, @NotNull Direction currentDirectionTank, @NotNull Field field,
+                BaseActionListener baseActionListener) {
         _field = field;
         field.setTeam(this);
         Tank tank = new Tank(this, liveTank, rechargeTank, currentDirectionTank);
@@ -16,6 +18,7 @@ public class Team {
         _tank = tank;
 
         Base base = new Base(this);
+        base.addBaseActionListener(baseActionListener);
         AbstractCell baseCell = field.getCell(basePosition);
 
         baseCell.putUnit(base);

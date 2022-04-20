@@ -7,4 +7,6 @@ import java.util.EventListener;
 public interface BulletActionListener extends EventListener {
 
     void bulletChangedCell(@NotNull BulletActionEvent event);
+
+    void objectDestroyed(@NotNull BulletActionEvent event);
 }

@@ -2,12 +2,11 @@ package tanks.team;
 
 import org.jetbrains.annotations.NotNull;
 import tanks.*;
-import tanks.event.BulletActionEvent;
-import tanks.event.BulletActionListener;
-import tanks.event.TankActionEvent;
-import tanks.event.TankActionListener;
+import tanks.event.*;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Tank extends Unit implements CanDamaged {
 
@@ -35,6 +34,9 @@ public class Tank extends Unit implements CanDamaged {
     // ------------------------------- Жизнь танка ---------------------------------
     private int _live;
 
+    private TimerTask timerTask;
+    private Timer timer;
+
     public boolean isAlive() {
         return getLive() != 0;
     }
@@ -53,10 +55,27 @@ public class Tank extends Unit implements CanDamaged {
     @Override
     public void causeDamage(int damage) {
         reduceLive(damage);
+        fireDamageCaused();
+        if(!isAlive()) {
+            timer = new Timer();
+            timerTask = new TimerDestroy();
+            timer.schedule(timerTask, 200);
+        }
+    }
+
+    class TimerDestroy extends TimerTask {
+
+        @Override
+        public void run() {
+            fireObjectDestroyed(Tank.this, null, cell());
+            removeCell();
+            timer.cancel();
+        }
     }
 
 
     // ------------------------------- Стрельба ---------------------------------
+    private boolean _blocker = false;
     private int _recharge;
     private final int RECHARGE_DURATION = 5;
 
@@ -64,23 +83,30 @@ public class Tank extends Unit implements CanDamaged {
         return this._recharge == 0;
     }
 
+    public boolean isBlocked() {
+        return this._blocker;
+    }
+
     public void shoot() {
         if(cell() == null) {
             throw new NullPointerException("Tank cell is null");
         }
-        if(canShoot() && isActive()) {
+        if(canShoot() && isActive() && !isBlocked()) {
             AbstractCell neighborCell = cell().neighbor(this._currentDirection);
             if(neighborCell != null) {
+                _blocker = true;
                 Bullet bullet = new Bullet(neighborCell, this._currentDirection, new Tank.BulletObserver());
                 setRecharge(RECHARGE_DURATION);
-
-                fireTankShot();
             }
         }
     }
 
     private void setRecharge(int recharge) {
         _recharge = recharge;
+    }
+
+    public int getRecharge() {
+        return this._recharge;
     }
 
     private void reduceRecharge() {
@@ -99,6 +125,7 @@ public class Tank extends Unit implements CanDamaged {
 
     public void setActive(boolean state) {
         this._active = state;
+        fireTankActivityChanged();
     }
 
 
@@ -110,8 +137,9 @@ public class Tank extends Unit implements CanDamaged {
     }
 
     public void changeDirection(@NotNull Direction direction) {
-        if(isActive()) {
+        if(isActive() && !isBlocked()) {
             this._currentDirection = direction;
+            fireTankChangedDirection();
         }
     }
 
@@ -121,21 +149,21 @@ public class Tank extends Unit implements CanDamaged {
         if(cell() == null) {
             throw new NullPointerException("Tank cell is null");
         }
-        if(isActive()) {
+        if(isActive() && !isBlocked()) {
             AbstractCell neighborCell = cell().neighbor(this._currentDirection);
 
             if(canMoveTo(neighborCell)) {
+                AbstractCell oldCell = cell();
+                fireTankMoved(oldCell, neighborCell);
                 cell().extractUnit();
                 neighborCell.putUnit(this);
                 reduceRecharge();
-
-                fireTankMoved();
             }
         }
     }
 
     public void skip() {
-        if(isActive()) {
+        if(isActive() && !isBlocked()) {
             reduceRecharge();
             fireTankSkippedMove();
         }
@@ -153,18 +181,6 @@ public class Tank extends Unit implements CanDamaged {
         return super.setCell(cell);
     }
 
-    @Override
-    public String toString() {
-        return "Tank{" +
-                super.toString() +
-                ", _live=" + _live +
-                ", _recharge=" + _recharge +
-                ", _active=" + _active +
-                ", _currentDirection=" + _currentDirection +
-                ", tankListListener=" + tankListListener +
-                '}';
-    }
-
     // ------------------------------- События ---------------------------------
     private ArrayList<TankActionListener> tankListListener = new ArrayList<>();
 
@@ -176,10 +192,12 @@ public class Tank extends Unit implements CanDamaged {
         tankListListener.remove(listener);
     }
 
-    private void fireTankMoved() {
+    private void fireTankMoved(@NotNull AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
             event.setTank(this);
+            event.setFromCell(oldPosition);
+            event.setToCell(newPosition);
             listener.tankMoved(event);
         }
     }
@@ -193,6 +211,7 @@ public class Tank extends Unit implements CanDamaged {
     }
 
     private void fireTankShot() {
+        _blocker = false;
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
             event.setTank(this);
@@ -200,11 +219,51 @@ public class Tank extends Unit implements CanDamaged {
         }
     }
 
-    private void fireBulletChangeCell() {
+    private void fireBulletChangeCell(@NotNull Bullet bullet, AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
+        for(TankActionListener listener: tankListListener) {
+            TankActionEvent event = new TankActionEvent(listener);
+            event.setBullet(bullet);
+            event.setFromCell(oldPosition);
+            event.setToCell(newPosition);
+            listener.bulletChangedCell(event);
+        }
+    }
+
+    private void fireTankChangedDirection() {
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
             event.setTank(this);
-            listener.bulletChangedCell(event);
+            listener.tankChangedDirection(event);
+        }
+    }
+
+    private void fireTankActivityChanged() {
+        for(TankActionListener listener: tankListListener) {
+            TankActionEvent event = new TankActionEvent(listener);
+            event.setTank(this);
+            listener.tankActivityChanged(event);
+        }
+    }
+
+    private void fireObjectDestroyed(Tank tank, Bullet bullet, @NotNull AbstractCell oldPosition) {
+        for(TankActionListener listener: tankListListener) {
+            TankActionEvent event = new TankActionEvent(listener);
+            if(tank != null) {
+                event.setTank(this);
+            }
+            else {
+                event.setBullet(bullet);
+            }
+            event.setFromCell(oldPosition);
+            listener.objectDestroyed(event);
+        }
+    }
+
+    private void fireDamageCaused() {
+        for(TankActionListener listener: tankListListener) {
+            TankActionEvent event = new TankActionEvent(listener);
+            event.setTank(this);
+            listener.damageCaused(event);
         }
     }
 
@@ -213,53 +272,74 @@ public class Tank extends Unit implements CanDamaged {
     private class BulletObserver implements BulletActionListener {
         @Override
         public void bulletChangedCell(@NotNull BulletActionEvent event) {
-            fireBulletChangeCell();
+            fireBulletChangeCell(event.getBullet(), event.getFromCell(), event.getToCell());
+        }
+
+        @Override
+        public void objectDestroyed(@NotNull BulletActionEvent event) {
+            fireObjectDestroyed(null, event.getBullet(), event.getFromCell());
         }
     }
 
 
     // ------------------------------- Снаряд ---------------------------------
-    private class Bullet extends Unit {
+    public class Bullet extends Unit {
 
         private final int DAMAGE = 1;
 
+        private Direction _direction;
+        private TimerTask timerTask = new TimerFly();
+        private Timer timer;
+
         public Bullet(@NotNull AbstractCell cell, @NotNull Direction direction, @NotNull BulletActionListener listener) {
             if(canFlyTo(cell)) {
-                cell.putUnit(this);
                 this._isDestroyed = false;
+                this._direction = direction;
                 this.addBulletActionListener(listener);
-                fireBulletChangeCell();
-                fly(direction);
+                fireBulletChangeCell(null, cell);
+                cell.putUnit(this);
+                timer = new Timer();
+                timer.schedule(timerTask, 100, 250);
             }
             else {
                 Unit unit = cell.getUnit();
                 if(unit instanceof CanDamaged) {
                     ((CanDamaged) unit).causeDamage(DAMAGE);
                 }
+                fireTankShot();
                 this._isDestroyed = true;
             }
         }
 
-        private void fly(Direction direction) {
-            while (!isDestroyed()) {
-                AbstractCell neighborCell = cell().neighbor(direction);
+        public Direction getDirection() {
+            return _direction;
+        }
 
-                if(canFlyTo(neighborCell)) {
-                    cell().extractUnit();
-                    neighborCell.putUnit(this);
-                    fireBulletChangeCell();
-                }
-                else if(neighborCell == null) {
-                    destroy();
-                }
-                else {
-                    Unit unit = neighborCell.getUnit();
+        private void flyOneStep() {
+            AbstractCell neighborCell = cell().neighbor(this.getDirection());
+            if (canFlyTo(neighborCell)) {
+                AbstractCell oldCell = cell();
+                fireBulletChangeCell(oldCell, neighborCell);
+                cell().extractUnit();
+                neighborCell.putUnit(this);
+            } else if (neighborCell == null) {
+                destroy();
+            } else {
+                Unit unit = neighborCell.getUnit();
 
-                    if(unit instanceof CanDamaged) {
-                        ((CanDamaged) unit).causeDamage(DAMAGE);
-                    }
-                    destroy();
+                if (unit instanceof CanDamaged) {
+                    ((CanDamaged) unit).causeDamage(DAMAGE);
                 }
+                destroy();
+            }
+        }
+
+
+        class TimerFly extends TimerTask {
+
+            @Override
+            public void run() {
+                flyOneStep();
             }
         }
 
@@ -274,17 +354,11 @@ public class Tank extends Unit implements CanDamaged {
         }
 
         private void destroy() {
+            fireObjectDestroyed(cell());
             cell().extractUnit();
+            timer.cancel();
+            fireTankShot();
             this._isDestroyed = true;
-        }
-
-        @Override
-        public String toString() {
-            return "Bullet{" +
-                    super.toString() +
-                    "DAMAGE=" + DAMAGE +
-                    ", _isDestroyed=" + _isDestroyed +
-                    '}';
         }
 
         // ------------------------------- События ---------------------------------
@@ -298,10 +372,22 @@ public class Tank extends Unit implements CanDamaged {
             bulletListListener.remove(listener);
         }
 
-        private void fireBulletChangeCell() {
+        private void fireBulletChangeCell(AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
             for(BulletActionListener listener: bulletListListener) {
                 BulletActionEvent event = new BulletActionEvent(listener);
+                event.setBullet(this);
+                event.setFromCell(oldPosition);
+                event.setToCell(newPosition);
                 listener.bulletChangedCell(event);
+            }
+        }
+
+        private void fireObjectDestroyed(@NotNull AbstractCell oldPosition) {
+            for(TankActionListener listener: tankListListener) {
+                TankActionEvent event = new TankActionEvent(listener);
+                event.setBullet(this);
+                event.setFromCell(oldPosition);
+                listener.objectDestroyed(event);
             }
         }
     }

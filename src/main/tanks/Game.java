@@ -1,11 +1,7 @@
 package tanks;
 
 import org.jetbrains.annotations.NotNull;
-import tanks.event.GameActionEvent;
-import tanks.event.GameActionListener;
-import tanks.event.TankActionEvent;
-import tanks.event.TankActionListener;
-import tanks.levels.FirstLevel;
+import tanks.event.*;
 import tanks.levels.Level;
 import tanks.team.Tank;
 import tanks.team.Team;
@@ -18,7 +14,7 @@ public class Game {
     private Field _field;
 
     public Game(@NotNull Level level) {
-        this._field = level.buildField();
+        this._field = level.buildField(new BrickWallObserver(), new BaseObserver());
 
         for(var team : _field.getTeams()) {
             team.getTank().addTankActionListener(new TankObserver());
@@ -26,6 +22,9 @@ public class Game {
         setActiveTank();
     }
 
+    public Field getField() {
+        return _field;
+    }
 
     // ------------------------------- Активный танк ---------------------------------
     private Tank _activeTank;
@@ -99,10 +98,10 @@ public class Game {
     }
 
     // ------------------------------- События ---------------------------------
-    private class TankObserver implements TankActionListener {
+    public class TankObserver implements TankActionListener {
         @Override
         public void tankMoved(@NotNull TankActionEvent event) {
-            fireTankMoved(event.getTank());
+            fireTankMoved(event.getTank(), event.getFromCell(), event.getToCell());
             passMoveToNextTank();
         }
 
@@ -126,8 +125,55 @@ public class Game {
 
         @Override
         public void bulletChangedCell(@NotNull TankActionEvent event) {
-            fireBulletChangeCell();
+            fireBulletChangeCell(event.getBullet(), event.getFromCell(), event.getToCell());
         }
+
+        @Override
+        public void tankChangedDirection(@NotNull TankActionEvent event) {
+            fireTankChangedDirection(event.getTank());
+        }
+
+        @Override
+        public void tankActivityChanged(@NotNull TankActionEvent event) {
+            fireTankActivityChanged(event.getTank());
+        }
+
+        @Override
+        public void damageCaused(@NotNull TankActionEvent event) {
+            fireDamageCaused(event.getTank());
+        }
+
+        @Override
+        public void objectDestroyed(@NotNull TankActionEvent event) {
+            if(event.getTank() != null) {
+                fireObjectDestroyed(event.getTank(), event.getFromCell());
+            }
+            else {
+                fireObjectDestroyed(event.getBullet(), event.getFromCell());
+            }
+        }
+    }
+
+    private class BrickWallObserver implements BrickWallActionListener {
+
+        @Override
+        public void damageCaused(@NotNull BrickWallActionEvent event) {
+            fireDamageCaused(event.getBrickWall());
+        }
+
+        @Override
+        public void objectDestroyed(@NotNull BrickWallActionEvent event) {
+            fireObjectDestroyed(event.getBrickWall(), event.getFromCell());
+        }
+    }
+
+    private class BaseObserver implements BaseActionListener {
+
+        @Override
+        public void damageCaused(@NotNull BaseActionEvent event) {
+            fireDamageCaused(event.getBase());
+        }
+
     }
 
     private ArrayList<GameActionListener> gameActionListeners = new ArrayList<>();
@@ -140,10 +186,12 @@ public class Game {
         gameActionListeners.remove(listener);
     }
 
-    private void fireTankMoved(@NotNull Tank tank) {
+    private void fireTankMoved(@NotNull Tank tank, @NotNull AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
         for(GameActionListener listener: gameActionListeners) {
             GameActionEvent event = new GameActionEvent(listener);
-            event.setTank(tank);
+            event.setUnit(tank);
+            event.setFromCell(oldPosition);
+            event.setToCell(newPosition);
             listener.tankMoved(event);
         }
     }
@@ -151,7 +199,7 @@ public class Game {
     private void fireTankSkippedMove(@NotNull Tank tank) {
         for(GameActionListener listener: gameActionListeners) {
             GameActionEvent event = new GameActionEvent(listener);
-            event.setTank(tank);
+            event.setUnit(tank);
             listener.tankSkippedMove(event);
         }
     }
@@ -159,7 +207,7 @@ public class Game {
     private void fireTankShot(@NotNull Tank tank) {
         for(GameActionListener listener: gameActionListeners) {
             GameActionEvent event = new GameActionEvent(listener);
-            event.setTank(tank);
+            event.setUnit(tank);
             listener.tankShot(event);
         }
     }
@@ -171,10 +219,46 @@ public class Game {
         }
     }
 
-    private void fireBulletChangeCell() {
+    private void fireBulletChangeCell(@NotNull Tank.Bullet bullet, AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
         for(GameActionListener listener: gameActionListeners) {
             GameActionEvent event = new GameActionEvent(listener);
+            event.setUnit(bullet);
+            event.setFromCell(oldPosition);
+            event.setToCell(newPosition);
             listener.bulletChangedCell(event);
+        }
+    }
+
+    private void fireTankChangedDirection(@NotNull Tank tank) {
+        for(GameActionListener listener: gameActionListeners) {
+            GameActionEvent event = new GameActionEvent(listener);
+            event.setUnit(tank);
+            listener.tankChangedDirection(event);
+        }
+    }
+
+    private void fireTankActivityChanged(@NotNull Tank tank) {
+        for(GameActionListener listener: gameActionListeners) {
+            GameActionEvent event = new GameActionEvent(listener);
+            event.setUnit(tank);
+            listener.tankActivityChanged(event);
+        }
+    }
+
+    private void fireObjectDestroyed(@NotNull Unit unit, AbstractCell oldPosition) {
+        for(GameActionListener listener: gameActionListeners) {
+            GameActionEvent event = new GameActionEvent(listener);
+            event.setUnit(unit);
+            event.setFromCell(oldPosition);
+            listener.objectDestroyed(event);
+        }
+    }
+
+    public void fireDamageCaused(@NotNull Unit unit) {
+        for(GameActionListener listener: gameActionListeners) {
+            GameActionEvent event = new GameActionEvent(listener);
+            event.setUnit(unit);
+            listener.damageCaused(event);
         }
     }
 }

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import tanks.*;
 import tanks.event.TankActionEvent;
 import tanks.event.TankActionListener;
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TankTest {
 
-    private enum EVENT {TANK_MOVED, TANK_SKIPPED_MOVE, TANK_SHOT, BULLET_CHANGED_CELL}
+    private enum EVENT {TANK_MOVED, TANK_SKIPPED_MOVE, TANK_SHOT}
 
     private List<EVENT> events = new ArrayList<>();
     private List<EVENT> expectedEvents = new ArrayList<>();
@@ -41,7 +42,27 @@ class TankTest {
 
         @Override
         public void bulletChangedCell(@NotNull TankActionEvent event) {
-            events.add(EVENT.BULLET_CHANGED_CELL);
+
+        }
+
+        @Override
+        public void tankChangedDirection(@NotNull TankActionEvent event) {
+
+        }
+
+        @Override
+        public void tankActivityChanged(@NotNull TankActionEvent event) {
+
+        }
+
+        @Override
+        public void damageCaused(@NotNull TankActionEvent event) {
+
+        }
+
+        @Override
+        public void objectDestroyed(@NotNull TankActionEvent event) {
+
         }
     }
 
@@ -89,7 +110,7 @@ class TankTest {
 
         // create tank
         Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                2, 1, Direction.north(), field);
+                2, 1, Direction.north(), field, new BaseObserverTest());
         tank = team.getTank();
         tank.setActive(true);
         tank.addTankActionListener(new EventsListener());
@@ -99,21 +120,21 @@ class TankTest {
     public void test_create_zeroLive() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Team(new CellPosition(0,2), new CellPosition(1,0),
-                0, 1, Direction.south(), field));
+                0, 1, Direction.south(), field, new BaseObserverTest()));
     }
 
     @Test
     public void test_create_negativeLive() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Team(new CellPosition(0,2), new CellPosition(1,0),
-                        -2, 1, Direction.south(), field));
+                        -2, 1, Direction.south(), field, new BaseObserverTest()));
     }
 
     @Test
     public void test_create_negativeRecharge() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Team(new CellPosition(0,2), new CellPosition(1,0),
-                        1, -2, Direction.south(), field));
+                        1, -2, Direction.south(), field, new BaseObserverTest()));
     }
 
     @Test
@@ -149,7 +170,7 @@ class TankTest {
     @Test
     public void test_move_emptyCellInDirection() {
         Team team = new Team(new CellPosition(0,2), new CellPosition(1,0),
-                1, 1, Direction.south(), field);
+                1, 1, Direction.south(), field, new BaseObserverTest());
 
         tank = team.getTank();
         tank.addTankActionListener(new EventsListener());
@@ -298,7 +319,7 @@ class TankTest {
     public void test_shoot_TankActive() {
         field.removeTeam(tank.getTeam());
         Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                2, 0, Direction.north(), field);
+                2, 0, Direction.north(), field, new BaseObserverTest());
         tank = team.getTank();
         tank.setActive(true);
         tank.addTankActionListener(new EventsListener());
@@ -306,7 +327,6 @@ class TankTest {
         tank.changeDirection(Direction.east());
         tank.shoot();
 
-        expectedEvents.add(EVENT.BULLET_CHANGED_CELL);
         expectedEvents.add(EVENT.TANK_SHOT);
 
         assertFalse(tank.canShoot());
@@ -375,7 +395,7 @@ class TankTest {
 
             // create tank
             Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                    2, 0, Direction.north(), field);
+                    2, 0, Direction.north(), field, new BaseObserverTest());
             tank = team.getTank();
             tank.setActive(true);
             tank.addTankActionListener(new EventsListener());
@@ -391,12 +411,11 @@ class TankTest {
         }
 
         @Test
+        @Timeout(2000)
         public void test_shoot_NeighborCellIsEmpty() {
             tank.changeDirection(Direction.east());
             tank.shoot();
 
-            expectedEvents.add(EVENT.BULLET_CHANGED_CELL);
-            expectedEvents.add(EVENT.BULLET_CHANGED_CELL);
             expectedEvents.add(EVENT.TANK_SHOT);
 
             assertFalse(tank.canShoot());
@@ -408,10 +427,7 @@ class TankTest {
             tank.changeDirection(Direction.south());
             tank.shoot();
 
-            expectedEvents.add(EVENT.BULLET_CHANGED_CELL);
-            expectedEvents.add(EVENT.BULLET_CHANGED_CELL);
             expectedEvents.add(EVENT.TANK_SHOT);
-
 
             assertFalse(tank.canShoot());
             assertEquals(expectedEvents, events);
@@ -432,7 +448,7 @@ class TankTest {
         @Test
         public void test_shoot_inNextCellIsTank() {
             Team team = new Team(new CellPosition(0,2), new CellPosition(1,2),
-                    1, 0, Direction.north(), field);
+                    1, 0, Direction.north(), field, new BaseObserverTest());
             tank.changeDirection(Direction.east());
             tank.shoot();
 
@@ -462,7 +478,6 @@ class TankTest {
             field.getCell(new CellPosition(0, 3)).putUnit(new BrickWall());
             tank.shoot();
 
-            expectedEvents.add(EVENT.BULLET_CHANGED_CELL);
             expectedEvents.add(EVENT.TANK_SHOT);
 
 

@@ -14,6 +14,10 @@ public class Direction {
         this._angle = angle;
     }
 
+    public int getAngle() {
+        return _angle;
+    }
+
     // ------------------ Возможные направления ---------------------
 
     public static Direction north()
@@ -23,10 +27,10 @@ public class Direction {
     { return new Direction(180); }
 
     public static Direction east()
-    { return new Direction(270); }
+    { return new Direction(90); }
 
     public static Direction west()
-    { return new Direction(90); }
+    { return new Direction(270); }
 
 
     // ------------------ Новые направления ---------------------

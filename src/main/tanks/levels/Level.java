@@ -3,17 +3,21 @@ package tanks.levels;
 import tanks.AbstractCell;
 import tanks.CellPosition;
 import tanks.Field;
+import tanks.event.BaseActionEvent;
+import tanks.event.BaseActionListener;
+import tanks.event.BrickWallActionListener;
+import tanks.event.TankActionListener;
 
 import java.util.Map;
 
 public abstract class Level {
 
-    public Field buildField() {
+    public Field buildField(BrickWallActionListener brickWallActionListener, BaseActionListener baseActionListener) {
 
         Field field = new Field(fieldWidth(), fieldHeight(), fieldCells());
 
-        placeEnvironmentItems(field);
-        placeTeams(field);
+        placeEnvironmentItems(field, brickWallActionListener);
+        placeTeams(field, baseActionListener);
 
         return field;
     }
@@ -26,9 +30,9 @@ public abstract class Level {
 
     protected abstract Map<CellPosition, AbstractCell> fieldCells();
 
-    protected abstract void placeTeams(Field field);
+    protected abstract void placeTeams(Field field, BaseActionListener baseActionListener);
 
-    protected abstract void placeEnvironmentItems(Field field);
+    protected abstract void placeEnvironmentItems(Field field, BrickWallActionListener brickWallActionListener);
 
 
 }

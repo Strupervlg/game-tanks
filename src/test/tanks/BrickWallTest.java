@@ -80,6 +80,8 @@ class BrickWallTest {
     public void test_causeDamage_UnitIsNotInCell() {
         AbstractCell cell = new Ground();
 
+        brickWall.addBrickWallActionListener(new BrickWallObserverTest());
+
         brickWall.causeDamage(0);
 
         assertNull(brickWall.cell());

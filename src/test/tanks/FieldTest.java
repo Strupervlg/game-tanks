@@ -129,7 +129,7 @@ class FieldTest {
         Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH, FIELD_HEIGHT);
         Field otherField = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
         Team team = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), otherField);
+                1, 0, Direction.north(), otherField, null);
 
         //Действие
         field.setTeam(team);
@@ -145,10 +145,10 @@ class FieldTest {
         Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH, FIELD_HEIGHT);
         Field otherField = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
         Team team1 = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, null);
 
         Team team2 = new Team(new CellPosition(1,0), new CellPosition(1,1),
-                1, 0, Direction.north(), otherField);
+                1, 0, Direction.north(), otherField, null);
 
         //Действие
         field.setTeam(team2);
@@ -164,7 +164,7 @@ class FieldTest {
     public void test_removeTeam_IsOneTeamInField() {
         //Входные данные
         Team team = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, null);
 
         //Действие
         field.removeTeam(team);
@@ -178,9 +178,9 @@ class FieldTest {
     public void test_removeTeam_IsTwoTeamInField() {
         //Входные данные
         Team team1 = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, null);
         Team team2 = new Team(new CellPosition(1,0), new CellPosition(1,1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, null);
 
         //Действие
         field.removeTeam(team1);
@@ -196,7 +196,7 @@ class FieldTest {
         Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH, FIELD_HEIGHT);
         Field otherField = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
         Team team1 = new Team(new CellPosition(0,0), new CellPosition(0,1),
-                1, 0, Direction.north(), otherField);
+                1, 0, Direction.north(), otherField, null);
 
         //Проверка
         assertFalse(field.removeTeam(team1));

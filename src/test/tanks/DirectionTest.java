@@ -31,22 +31,22 @@ class DirectionTest {
 
     @Test
     public void test_east() {
-        assertEquals(Direction.east(), new Direction(270));
+        assertEquals(Direction.east(), new Direction(90));
     }
 
     @Test
     public void test_west() {
-        assertEquals(Direction.west(), new Direction(90));
+        assertEquals(Direction.west(), new Direction(270));
     }
 
     @Test
     public void test_clockwise() {
-        assertEquals(Direction.north().clockwise(), Direction.west());
+        assertEquals(Direction.north().clockwise(), Direction.east());
     }
 
     @Test
     public void test_anticlockwise() {
-        assertEquals(Direction.north().anticlockwise(), Direction.east());
+        assertEquals(Direction.north().anticlockwise(), Direction.west());
     }
 
     @Test

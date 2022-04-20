@@ -15,4 +15,12 @@ public interface GameActionListener extends EventListener {
     void gameOver(@NotNull GameActionEvent event);
 
     void bulletChangedCell(@NotNull GameActionEvent event);
+
+    void tankChangedDirection(@NotNull GameActionEvent event);
+
+    void tankActivityChanged(@NotNull GameActionEvent event);
+
+    void damageCaused(@NotNull GameActionEvent event);
+
+    void objectDestroyed(@NotNull GameActionEvent event);
 }

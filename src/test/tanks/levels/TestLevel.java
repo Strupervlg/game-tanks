@@ -1,6 +1,8 @@
 package tanks.levels;
 
 import tanks.*;
+import tanks.event.BaseActionListener;
+import tanks.event.BrickWallActionListener;
 import tanks.team.Team;
 
 import java.util.*;
@@ -55,15 +57,15 @@ public class TestLevel extends Level {
     }
 
     @Override
-    protected void placeTeams(Field field) {
+    protected void placeTeams(Field field, BaseActionListener baseActionListener) {
         Team team1 = new Team(new CellPosition(0, 2), new CellPosition(0, 1),
-                1, 0, Direction.south(), field);
+                1, 0, Direction.south(), field, baseActionListener);
         Team team2 = new Team(new CellPosition(3, 2), new CellPosition(3, 1),
-                1, 0, Direction.north(), field);
+                1, 0, Direction.north(), field, baseActionListener);
     }
 
     @Override
-    protected void placeEnvironmentItems(Field field) {
+    protected void placeEnvironmentItems(Field field, BrickWallActionListener brickWallActionListener) {
         field.getCell(new CellPosition(2, 0)).putUnit(new BrickWall());
         field.getCell(new CellPosition(1, 3)).putUnit(new BrickWall());
 
