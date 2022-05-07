@@ -12,6 +12,8 @@ import tanks.utils.Pare;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,6 +25,10 @@ class GameTest {
 
     private List<Pare<Event, Unit>> events = new ArrayList<>();
     private List<Pare<Event, Unit>> expectedEvents = new ArrayList<>();
+
+    private TimerTask timerTask;
+    private Timer timer;
+    private Tank checkTank;
 
     private class EventListener implements GameActionListener {
 
@@ -86,7 +92,8 @@ class GameTest {
         Tank tank = game.activeTank();
         expectedEvents.add(new Pare<>(Event.TANK_MOVED, tank));
 
-        game.activeTank().changeDirection(Direction.east());
+        Direction currentDirection = game.activeTank().getCurrentDirection();
+        game.activeTank().changeDirection(currentDirection.opposite());
         game.activeTank().move();
 
         assertNotEquals(tank, game.activeTank());
@@ -98,7 +105,7 @@ class GameTest {
     public void test_tankMoved_incorrectDirection() {
         Tank tank = game.activeTank();
 
-        game.activeTank().changeDirection(Direction.west());
+        game.activeTank().changeDirection(Direction.north());
         game.activeTank().move();
 
         assertEquals(tank, game.activeTank());
@@ -118,18 +125,30 @@ class GameTest {
         assertEquals(expectedEvents, events);
     }
 
+    class TimerCheckPassMoveToNextTank extends TimerTask {
+
+        @Override
+        public void run() {
+            assertNotEquals(checkTank, game.activeTank());
+            assertFalse(checkTank.isActive());
+            assertEquals(expectedEvents, events);
+        }
+    }
+
     @Test
     public void test_tankShot() {
         Tank tank = game.activeTank();
         expectedEvents.add(new Pare<>(Event.BULLET_CHANGED_CELL, null));
         expectedEvents.add(new Pare<>(Event.TANK_SHOT, tank));
 
-        game.activeTank().changeDirection(Direction.east());
+        Direction currentDirection = game.activeTank().getCurrentDirection();
+        game.activeTank().changeDirection(currentDirection.opposite());
         game.activeTank().shoot();
 
-        assertNotEquals(tank, game.activeTank());
-        assertFalse(tank.isActive());
-        assertEquals(expectedEvents, events);
+        timer = new Timer();
+        timerTask = new TimerCheckPassMoveToNextTank();
+        checkTank = tank;
+        timer.schedule(timerTask, 500);
     }
 
     @Test
@@ -153,9 +172,22 @@ class GameTest {
         game.activeTank().move();
         expectedEvents.add(new Pare<>(Event.TANK_MOVED, thirdTank));
 
-        assertNotEquals(thirdTank, game.activeTank());
-        assertFalse(thirdTank.isActive());
-        assertEquals(expectedEvents, events);
+
+        timer = new Timer();
+        timerTask = new TimerCheckPassMoveToNextTank();
+        checkTank = thirdTank;
+        timer.schedule(timerTask, 500);
+    }
+
+    class TimerCheckWinner extends TimerTask {
+
+        @Override
+        public void run() {
+            assertNull(game.activeTank());
+            assertFalse(checkTank.isActive());
+            assertEquals(checkTank.getTeam(), game.winner());
+            assertEquals(expectedEvents, events);
+        }
     }
 
     @Test
@@ -167,11 +199,9 @@ class GameTest {
         expectedEvents.add(new Pare<>(Event.BULLET_CHANGED_CELL, null));
         expectedEvents.add(new Pare<>(Event.GAME_OVER, null));
 
-
-
-        assertNull(game.activeTank());
-        assertFalse(tank.isActive());
-        assertEquals(tank.getTeam(), game.winner());
-        assertEquals(expectedEvents, events);
+        timer = new Timer();
+        timerTask = new TimerCheckWinner();
+        checkTank = tank;
+        timer.schedule(timerTask, 500);
     }
 }

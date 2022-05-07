@@ -1,6 +1,7 @@
 package tanks.event;
 
 import org.jetbrains.annotations.NotNull;
+import tanks.AbilityToStoreUnit;
 import tanks.AbstractCell;
 import tanks.team.Tank;
 
@@ -11,6 +12,8 @@ public class BulletActionEvent extends EventObject {
     private Tank.Bullet _bullet;
     private AbstractCell fromCell;
     private AbstractCell toCell;
+    private AbilityToStoreUnit fromStorageUnit;
+    private AbilityToStoreUnit toStorageUnit;
 
     public void setFromCell(AbstractCell fromCell) {
         this.fromCell = fromCell;
@@ -34,6 +37,22 @@ public class BulletActionEvent extends EventObject {
 
     public Tank.Bullet getBullet() {
         return this._bullet;
+    }
+
+    public void setFromStorageUnit(AbilityToStoreUnit fromStorageUnit) {
+        this.fromStorageUnit = fromStorageUnit;
+    }
+
+    public AbilityToStoreUnit getFromStorageUnit() {
+        return fromStorageUnit;
+    }
+
+    public void setToStorageUnit(AbilityToStoreUnit toStorageUnit) {
+        this.toStorageUnit = toStorageUnit;
+    }
+
+    public AbilityToStoreUnit getToStorageUnit() {
+        return toStorageUnit;
     }
 
     /**

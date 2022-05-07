@@ -2,6 +2,7 @@ package tanks;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +30,10 @@ public abstract class AbstractCell {
         if(neighbor.neighbor(direction.opposite()) == null) {
             neighbor.setNeighbor(direction.opposite(), this);
         }
+    }
+
+    Map<Direction, AbstractCell> neighbors() {
+        return Collections.unmodifiableMap(this._neighbors);
     }
 
 

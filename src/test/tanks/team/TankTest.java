@@ -9,10 +9,7 @@ import tanks.*;
 import tanks.event.TankActionEvent;
 import tanks.event.TankActionListener;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,6 +19,9 @@ class TankTest {
 
     private List<EVENT> events = new ArrayList<>();
     private List<EVENT> expectedEvents = new ArrayList<>();
+
+    private TimerTask timerTask;
+    private Timer timer;
 
     private class EventsListener implements TankActionListener {
 
@@ -329,8 +329,18 @@ class TankTest {
 
         expectedEvents.add(EVENT.TANK_SHOT);
 
-        assertFalse(tank.canShoot());
-        assertEquals(expectedEvents, events);
+        timer = new Timer();
+        timerTask = new TimerCheckShot();
+        timer.schedule(timerTask, 500);
+    }
+
+    class TimerCheckShot extends TimerTask {
+
+        @Override
+        public void run() {
+            assertFalse(tank.canShoot());
+            assertEquals(expectedEvents, events);
+        }
     }
 
     @Test
@@ -370,7 +380,6 @@ class TankTest {
         assertEquals(currentDirection, tank.getCurrentDirection());
     }
 
-
     @Test
     public void test_setCell_CellIsWater() {
         AbstractCell cell = new Water();
@@ -379,9 +388,142 @@ class TankTest {
         assertNull(cell.getUnit());
     }
 
+    @Test
+    public void test_move_nextPositionIsEmptyStorageUnit() {
+        tank.changeDirection(Direction.east());
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        tank.move();
+
+        expectedEvents.add(EVENT.TANK_MOVED);
+        AbstractCell cell = field.getCell(new CellPosition(0, 1));
+
+
+        assertEquals(tank, bush.getTank());
+        assertEquals(bush, tank.getStoreUnit());
+        assertNull(cell.getUnit());
+        assertNull(tank.cell());
+        assertEquals(expectedEvents, events);
+    }
+
+    @Test
+    public void test_move_nextPositionIsOccupiedStorageUnit() {
+        tank.changeDirection(Direction.east());
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        Team team = new Team(new CellPosition(1,2), new CellPosition(1,0),
+                2, 0, Direction.north(), field, new BaseObserverTest());
+        Tank tank2 = team.getTank();
+        bush.putTank(tank2);
+
+        tank.move();
+
+        AbstractCell cell = field.getCell(new CellPosition(0, 1));
+
+        assertEquals(cell, tank.cell());
+        assertEquals(tank, cell.getUnit());
+        assertEquals(bush, tank2.getStoreUnit());
+        assertEquals(tank2, bush.getTank());
+        assertTrue(events.isEmpty());
+    }
+
+    @Test
+    public void test_move_currentPositionIsStorageUnit() {
+        tank.changeDirection(Direction.west());
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        bush.putTank(tank);
+        tank.move();
+
+        expectedEvents.add(EVENT.TANK_MOVED);
+        AbstractCell nextCell = field.getCell(new CellPosition(0, 1));
+
+
+        assertEquals(tank, nextCell.getUnit());
+        assertEquals(nextCell, tank.cell());
+        assertNull(bush.getTank());
+        assertNull(tank.getStoreUnit());
+        assertEquals(expectedEvents, events);
+    }
+
+    @Test
+    public void test_shoot_currentPositionIsStorageUnit() {
+        field.removeTeam(tank.getTeam());
+        Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
+                2, 0, Direction.north(), field, new BaseObserverTest());
+        tank = team.getTank();
+        tank.setActive(true);
+        tank.addTankActionListener(new EventsListener());
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        bush.putTank(tank);
+        tank.changeDirection(Direction.west());
+        tank.shoot();
+
+        expectedEvents.add(EVENT.TANK_SHOT);
+
+        timer = new Timer();
+        timerTask = new TimerCheckShot();
+        timer.schedule(timerTask, 500);
+    }
+
+    @Test
+    public void test_move_twoBushesInRow() {
+        tank.changeDirection(Direction.east());
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        Bush bush2 = new Bush();
+        field.getCell(new CellPosition(1, 2)).putUnit(bush2);
+        tank.move();
+        tank.changeDirection(Direction.south());
+        tank.move();
+
+        expectedEvents.add(EVENT.TANK_MOVED);
+        expectedEvents.add(EVENT.TANK_MOVED);
+        AbstractCell cell = field.getCell(new CellPosition(0, 1));
+
+
+        assertEquals(tank, bush2.getTank());
+        assertEquals(bush2, tank.getStoreUnit());
+        assertNull(cell.getUnit());
+        assertNull(tank.cell());
+        assertEquals(expectedEvents, events);
+    }
+
+    @Test
+    public void test_setCell_TankInStorageUnit() {
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        bush.putTank(tank);
+        AbstractCell cell = new Ground();
+
+        cell.putUnit(tank);
+
+
+        assertEquals(tank, cell.getUnit());
+        assertNull(bush.getTank());
+        assertNull(tank.getStoreUnit());
+    }
+
+    @Test
+    public void test_setStoreUnit_TankInStorageUnit() {
+        Bush bush = new Bush();
+        field.getCell(new CellPosition(0, 2)).putUnit(bush);
+        bush.putTank(tank);
+        Bush bush2 = new Bush();
+        field.getCell(new CellPosition(1, 2)).putUnit(bush2);
+
+        tank.setStoreUnit(bush2);
+
+        assertEquals(tank, bush2.getTank());
+        assertEquals(bush2, tank.getStoreUnit());
+        assertNull(bush.getTank());
+    }
 
     @Nested
     class BulletTest {
+
+        private CellPosition checkPosition;
 
         @BeforeEach
         public void setUp() {
@@ -390,7 +532,7 @@ class TankTest {
             expectedEvents.clear();
 
             // create field
-            Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH+1, FIELD_HEIGHT+1);
+            Map<CellPosition, AbstractCell> cells = buildCells(FIELD_WIDTH+2, FIELD_HEIGHT+1);
             field = new Field(FIELD_WIDTH, FIELD_HEIGHT, cells);
 
             // create tank
@@ -411,15 +553,15 @@ class TankTest {
         }
 
         @Test
-        @Timeout(2000)
         public void test_shoot_NeighborCellIsEmpty() {
             tank.changeDirection(Direction.east());
             tank.shoot();
 
             expectedEvents.add(EVENT.TANK_SHOT);
 
-            assertFalse(tank.canShoot());
-            assertEquals(expectedEvents, events);
+            timer = new Timer();
+            timerTask = new TimerCheckShot();
+            timer.schedule(timerTask, 500);
         }
 
         @Test
@@ -429,8 +571,9 @@ class TankTest {
 
             expectedEvents.add(EVENT.TANK_SHOT);
 
-            assertFalse(tank.canShoot());
-            assertEquals(expectedEvents, events);
+            timer = new Timer();
+            timerTask = new TimerCheckShot();
+            timer.schedule(timerTask, 500);
         }
 
         @Test
@@ -459,6 +602,16 @@ class TankTest {
             assertEquals(expectedEvents, events);
         }
 
+        class TimerCheckDestroyUnit extends TimerTask {
+
+            @Override
+            public void run() {
+                assertFalse(tank.canShoot());
+                assertNull(field.getCell(checkPosition).getUnit());
+                assertEquals(expectedEvents, events);
+            }
+        }
+
         @Test
         public void test_shoot_inNextCellIsBrickWall() {
             tank.changeDirection(Direction.east());
@@ -467,9 +620,10 @@ class TankTest {
 
             expectedEvents.add(EVENT.TANK_SHOT);
 
-            assertFalse(tank.canShoot());
-            assertNull( field.getCell(new CellPosition(0, 2)).getUnit());
-            assertEquals(expectedEvents, events);
+            timer = new java.util.Timer();
+            timerTask = new TimerCheckDestroyUnit();
+            checkPosition = new CellPosition(0, 2);
+            timer.schedule(timerTask, 500);
         }
 
         @Test
@@ -480,11 +634,68 @@ class TankTest {
 
             expectedEvents.add(EVENT.TANK_SHOT);
 
-
-            assertFalse(tank.canShoot());
-            assertNull( field.getCell(new CellPosition(0, 3)).getUnit());
-            assertEquals(expectedEvents, events);
+            timer = new java.util.Timer();
+            timerTask = new TimerCheckDestroyUnit();
+            checkPosition = new CellPosition(0, 3);
+            timer.schedule(timerTask, 500);
         }
 
+        @Test
+        public void test_shoot_throughOneCellStorageUnit() {
+            tank.changeDirection(Direction.east());
+            field.getCell(new CellPosition(0, 3)).putUnit(new Bush());
+            tank.shoot();
+
+            expectedEvents.add(EVENT.TANK_SHOT);
+
+            timer = new Timer();
+            timerTask = new TimerCheckShot();
+            timer.schedule(timerTask, 500);
+        }
+
+        @Test
+        public void test_shoot_inNextCellIsStorageUnit() {
+            tank.changeDirection(Direction.east());
+            field.getCell(new CellPosition(0, 2)).putUnit(new Bush());
+            tank.shoot();
+
+            expectedEvents.add(EVENT.TANK_SHOT);
+
+            timer = new Timer();
+            timerTask = new TimerCheckShot();
+            timer.schedule(timerTask, 500);
+        }
+
+        @Test
+        public void test_shoot_inLastCellIsStorageUnit() {
+            field.removeTeam(tank.getTeam());
+            Team team = new Team(new CellPosition(0,3), new CellPosition(1,0),
+                    1, 0, Direction.east(), field, new BaseObserverTest());
+            tank = team.getTank();
+            tank.addTankActionListener(new EventsListener());
+            tank.setActive(true);
+            field.getCell(new CellPosition(0, 4)).putUnit(new Bush());
+            tank.shoot();
+
+            expectedEvents.add(EVENT.TANK_SHOT);
+
+            timer = new Timer();
+            timerTask = new TimerCheckShot();
+            timer.schedule(timerTask, 500);
+        }
+
+        @Test
+        public void test_shoot_twoBushesInRow() {
+            tank.changeDirection(Direction.east());
+            field.getCell(new CellPosition(0, 3)).putUnit(new Bush());
+            field.getCell(new CellPosition(0, 2)).putUnit(new Bush());
+            tank.shoot();
+
+            expectedEvents.add(EVENT.TANK_SHOT);
+
+            timer = new Timer();
+            timerTask = new TimerCheckShot();
+            timer.schedule(timerTask, 500);
+        }
     }
 }

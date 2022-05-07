@@ -60,9 +60,9 @@ public class TestLevelWithMultipleTeams extends Level {
                 1, 0, Direction.south(), field, baseActionListener);
         Team team2 = new Team(new CellPosition(0, 3), new CellPosition(1, 0),
                 1, 0, Direction.south(), field, baseActionListener);
-        Team team3 = new Team(new CellPosition(3, 3), new CellPosition(1, 1),
+        Team team3 = new Team(new CellPosition(1, 3), new CellPosition(1, 1),
                 1, 0, Direction.north(), field, baseActionListener);
-        Team team4 = new Team(new CellPosition(3, 2), new CellPosition(0, 1),
+        Team team4 = new Team(new CellPosition(1, 2), new CellPosition(0, 1),
                 1, 0, Direction.north(), field, baseActionListener);
     }
 

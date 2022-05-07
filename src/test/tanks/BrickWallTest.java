@@ -3,11 +3,18 @@ package tanks;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class BrickWallTest {
 
     BrickWall brickWall;
+
+    private TimerTask timerTask;
+    private Timer timer;
+    private AbstractCell checkCell;
 
     @BeforeEach
     void setUp() {
@@ -72,8 +79,19 @@ class BrickWallTest {
         brickWall.setCell(cell);
         brickWall.causeDamage(0);
 
-        assertNull(brickWall.cell());
-        assertNull(cell.getUnit());
+        timer = new Timer();
+        timerTask = new TimerCheckDestroy();
+        checkCell = cell;
+        timer.schedule(timerTask, 500);
+    }
+
+    class TimerCheckDestroy extends TimerTask {
+
+        @Override
+        public void run() {
+            assertNull(brickWall.cell());
+            assertNull(checkCell.getUnit());
+        }
     }
 
     @Test

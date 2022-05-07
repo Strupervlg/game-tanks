@@ -101,7 +101,7 @@ public class Game {
     public class TankObserver implements TankActionListener {
         @Override
         public void tankMoved(@NotNull TankActionEvent event) {
-            fireTankMoved(event.getTank(), event.getFromCell(), event.getToCell());
+            fireTankMoved(event);
             passMoveToNextTank();
         }
 
@@ -125,7 +125,7 @@ public class Game {
 
         @Override
         public void bulletChangedCell(@NotNull TankActionEvent event) {
-            fireBulletChangeCell(event.getBullet(), event.getFromCell(), event.getToCell());
+            fireBulletChangeCell(event);
         }
 
         @Override
@@ -186,12 +186,22 @@ public class Game {
         gameActionListeners.remove(listener);
     }
 
-    private void fireTankMoved(@NotNull Tank tank, @NotNull AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
+    private void fireTankMoved(@NotNull TankActionEvent tankEvent) {
         for(GameActionListener listener: gameActionListeners) {
             GameActionEvent event = new GameActionEvent(listener);
-            event.setUnit(tank);
-            event.setFromCell(oldPosition);
-            event.setToCell(newPosition);
+            event.setUnit(tankEvent.getTank());
+            if(tankEvent.getFromStorageUnit() == null) {
+                event.setFromCell(tankEvent.getFromCell());
+            }
+            else {
+                event.setFromStorageUnit(tankEvent.getFromStorageUnit());
+            }
+            if(tankEvent.getToStorageUnit() == null) {
+                event.setToCell(tankEvent.getToCell());
+            }
+            else {
+                event.setToStorageUnit(tankEvent.getToStorageUnit());
+            }
             listener.tankMoved(event);
         }
     }
@@ -219,12 +229,22 @@ public class Game {
         }
     }
 
-    private void fireBulletChangeCell(@NotNull Tank.Bullet bullet, AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
+    private void fireBulletChangeCell(@NotNull TankActionEvent bulletEvent) {
         for(GameActionListener listener: gameActionListeners) {
             GameActionEvent event = new GameActionEvent(listener);
-            event.setUnit(bullet);
-            event.setFromCell(oldPosition);
-            event.setToCell(newPosition);
+            event.setUnit(bulletEvent.getBullet());
+            if(bulletEvent.getFromStorageUnit() == null) {
+                event.setFromCell(bulletEvent.getFromCell());
+            }
+            else {
+                event.setFromStorageUnit(bulletEvent.getFromStorageUnit());
+            }
+            if(bulletEvent.getToStorageUnit() == null) {
+                event.setToCell(bulletEvent.getToCell());
+            }
+            else {
+                event.setToStorageUnit(bulletEvent.getToStorageUnit());
+            }
             listener.bulletChangedCell(event);
         }
     }

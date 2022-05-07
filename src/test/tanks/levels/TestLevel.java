@@ -58,10 +58,10 @@ public class TestLevel extends Level {
 
     @Override
     protected void placeTeams(Field field, BaseActionListener baseActionListener) {
-        Team team1 = new Team(new CellPosition(0, 2), new CellPosition(0, 1),
-                1, 0, Direction.south(), field, baseActionListener);
-        Team team2 = new Team(new CellPosition(3, 2), new CellPosition(3, 1),
-                1, 0, Direction.north(), field, baseActionListener);
+        Team team1 = new Team(new CellPosition(0, 1), new CellPosition(3, 1),
+                1, 0, Direction.east(), field, baseActionListener);
+        Team team2 = new Team(new CellPosition(0, 2), new CellPosition(3, 2),
+                1, 0, Direction.west(), field, baseActionListener);
     }
 
     @Override

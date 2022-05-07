@@ -88,11 +88,13 @@ public class Tank extends Unit implements CanDamaged {
     }
 
     public void shoot() {
-        if(cell() == null) {
+        if(cell() == null && getStoreUnit() == null) {
             throw new NullPointerException("Tank cell is null");
         }
         if(canShoot() && isActive() && !isBlocked()) {
-            AbstractCell neighborCell = cell().neighbor(this._currentDirection);
+            AbstractCell currentCell = cell() == null ? _storageUnit.getCell() : cell();
+
+            AbstractCell neighborCell = currentCell.neighbor(this._currentDirection);
             if(neighborCell != null) {
                 _blocker = true;
                 Bullet bullet = new Bullet(neighborCell, this._currentDirection, new Tank.BulletObserver());
@@ -146,20 +148,27 @@ public class Tank extends Unit implements CanDamaged {
 
     // ------------------------------- Передвижение танка ---------------------------------
     public void move() {
-        if(cell() == null) {
+        if(cell() == null && getStoreUnit() == null) {
             throw new NullPointerException("Tank cell is null");
         }
-        if(isActive() && !isBlocked()) {
-            AbstractCell neighborCell = cell().neighbor(this._currentDirection);
-
-            if(canMoveTo(neighborCell)) {
-                AbstractCell oldCell = cell();
-                fireTankMoved(oldCell, neighborCell);
-                cell().extractUnit();
-                neighborCell.putUnit(this);
-                reduceRecharge();
-            }
+        if (!isActive() || isBlocked()) {
+            return;
         }
+
+        AbstractCell currentCell = cell() == null ? _storageUnit.getCell() : cell();
+        AbstractCell neighborCell = currentCell.neighbor(this._currentDirection);
+
+        if (!canMoveTo(neighborCell)) {
+            return;
+        }
+        fireTankMoved(currentCell, neighborCell);
+        if (neighborCell.getUnit() instanceof AbilityToStoreUnit) {
+            this.setStoreUnit((AbilityToStoreUnit) neighborCell.getUnit());
+        } else {
+            this.setCell(neighborCell);
+        }
+
+        reduceRecharge();
     }
 
     public void skip() {
@@ -170,7 +179,9 @@ public class Tank extends Unit implements CanDamaged {
     }
 
     public boolean canMoveTo(AbstractCell cell) {
-        return !(cell == null || cell instanceof Water || cell.getUnit() != null);
+        return !(cell == null || cell instanceof Water ||
+                (cell.getUnit() != null && (!(cell.getUnit() instanceof AbilityToStoreUnit) ||
+                        ((AbilityToStoreUnit) cell.getUnit()).getTank() != null)));
     }
 
     @Override
@@ -178,8 +189,48 @@ public class Tank extends Unit implements CanDamaged {
         if(cell instanceof Water) {
             throw new IllegalArgumentException("Tank cell is water");
         }
+        if(getStoreUnit() != null) {
+            removeStoreUnit();
+        }
         return super.setCell(cell);
     }
+
+
+    // ------------------------------- Юнит с хранением танка ---------------------------------
+    private AbilityToStoreUnit _storageUnit;
+
+    public AbilityToStoreUnit getStoreUnit() {
+        return this._storageUnit;
+    }
+
+    public boolean setStoreUnit(@NotNull AbilityToStoreUnit storeUnit) {
+        if(cell() != null) {
+            removeCell();
+        }
+        if(getStoreUnit() != null && _storageUnit != storeUnit) {
+            removeStoreUnit();
+        }
+
+        if(getStoreUnit() != null) {
+            return false;
+        }
+
+        _storageUnit = storeUnit;
+        _storageUnit.putTank(this);
+        return true;
+    }
+
+    public boolean removeStoreUnit() {
+        if(getStoreUnit() == null) {
+            return false;
+        }
+
+        AbilityToStoreUnit storeUnit = _storageUnit;
+        _storageUnit = null;
+        storeUnit.extractTank();
+        return true;
+    }
+
 
     // ------------------------------- События ---------------------------------
     private ArrayList<TankActionListener> tankListListener = new ArrayList<>();
@@ -196,8 +247,18 @@ public class Tank extends Unit implements CanDamaged {
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
             event.setTank(this);
-            event.setFromCell(oldPosition);
-            event.setToCell(newPosition);
+            if(oldPosition.getUnit() != null && oldPosition.getUnit() instanceof AbilityToStoreUnit) {
+                event.setFromStorageUnit((AbilityToStoreUnit) oldPosition.getUnit());
+            }
+            else {
+                event.setFromCell(oldPosition);
+            }
+            if(newPosition.getUnit() != null && newPosition.getUnit() instanceof AbilityToStoreUnit) {
+                event.setToStorageUnit((AbilityToStoreUnit) newPosition.getUnit());
+            }
+            else {
+                event.setToCell(newPosition);
+            }
             listener.tankMoved(event);
         }
     }
@@ -219,12 +280,22 @@ public class Tank extends Unit implements CanDamaged {
         }
     }
 
-    private void fireBulletChangeCell(@NotNull Bullet bullet, AbstractCell oldPosition, @NotNull AbstractCell newPosition) {
+    private void fireBulletChangeCell(@NotNull BulletActionEvent bulletEvent) {
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
-            event.setBullet(bullet);
-            event.setFromCell(oldPosition);
-            event.setToCell(newPosition);
+            event.setBullet(bulletEvent.getBullet());
+            if(bulletEvent.getFromStorageUnit() == null) {
+                event.setFromCell(bulletEvent.getFromCell());
+            }
+            else {
+                event.setFromStorageUnit(bulletEvent.getFromStorageUnit());
+            }
+            if(bulletEvent.getToStorageUnit() == null) {
+                event.setToCell(bulletEvent.getToCell());
+            }
+            else {
+                event.setToStorageUnit(bulletEvent.getToStorageUnit());
+            }
             listener.bulletChangedCell(event);
         }
     }
@@ -259,6 +330,15 @@ public class Tank extends Unit implements CanDamaged {
         }
     }
 
+    private void fireObjectDestroyed(Bullet bullet, @NotNull AbilityToStoreUnit oldPosition) {
+        for(TankActionListener listener: tankListListener) {
+            TankActionEvent event = new TankActionEvent(listener);
+            event.setBullet(bullet);
+            event.setFromStorageUnit(oldPosition);
+            listener.objectDestroyed(event);
+        }
+    }
+
     private void fireDamageCaused() {
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
@@ -272,12 +352,17 @@ public class Tank extends Unit implements CanDamaged {
     private class BulletObserver implements BulletActionListener {
         @Override
         public void bulletChangedCell(@NotNull BulletActionEvent event) {
-            fireBulletChangeCell(event.getBullet(), event.getFromCell(), event.getToCell());
+            fireBulletChangeCell(event);
         }
 
         @Override
         public void objectDestroyed(@NotNull BulletActionEvent event) {
-            fireObjectDestroyed(null, event.getBullet(), event.getFromCell());
+            if(event.getFromCell() == null) {
+                fireObjectDestroyed(event.getBullet(), event.getFromStorageUnit());
+            }
+            else {
+                fireObjectDestroyed(null, event.getBullet(), event.getFromCell());
+            }
         }
     }
 
@@ -297,7 +382,12 @@ public class Tank extends Unit implements CanDamaged {
                 this._direction = direction;
                 this.addBulletActionListener(listener);
                 fireBulletChangeCell(null, cell);
-                cell.putUnit(this);
+                if(cell.getUnit() instanceof AbilityToStoreUnit) {
+                    ((AbilityToStoreUnit) cell.getUnit()).putBullet(this);
+                }
+                else {
+                    this.setCell(cell);
+                }
                 timer = new Timer();
                 timer.schedule(timerTask, 100, 250);
             }
@@ -316,12 +406,22 @@ public class Tank extends Unit implements CanDamaged {
         }
 
         private void flyOneStep() {
-            AbstractCell neighborCell = cell().neighbor(this.getDirection());
+            AbstractCell currentCell;
+            if (cell() == null) {
+                currentCell = _storageUnit.getCell();
+            }
+            else {
+                currentCell = cell();
+            }
+
+            AbstractCell neighborCell = currentCell.neighbor(this.getDirection());
             if (canFlyTo(neighborCell)) {
-                AbstractCell oldCell = cell();
-                fireBulletChangeCell(oldCell, neighborCell);
-                cell().extractUnit();
-                neighborCell.putUnit(this);
+                fireBulletChangeCell(currentCell, neighborCell);
+                if (neighborCell.getUnit() instanceof AbilityToStoreUnit) {
+                    this.setStoreUnit((AbilityToStoreUnit) neighborCell.getUnit());
+                } else {
+                    this.setCell(neighborCell);
+                }
             } else if (neighborCell == null) {
                 destroy();
             } else {
@@ -344,7 +444,9 @@ public class Tank extends Unit implements CanDamaged {
         }
 
         public boolean canFlyTo(AbstractCell cell) {
-            return cell != null && cell.getUnit() == null;
+            return !(cell == null ||
+                    (cell.getUnit() != null &&
+                            (cell.getUnit() instanceof CanDamaged || !(cell.getUnit() instanceof AbilityToStoreUnit))));
         }
 
         private boolean _isDestroyed;
@@ -354,11 +456,61 @@ public class Tank extends Unit implements CanDamaged {
         }
 
         private void destroy() {
-            fireObjectDestroyed(cell());
-            cell().extractUnit();
+            if(cell() == null) {
+                fireObjectDestroyed(getStoreUnit());
+                getStoreUnit().extractBullet();
+            }
+            else {
+                fireObjectDestroyed(cell());
+                cell().extractUnit();
+            }
             timer.cancel();
             fireTankShot();
             this._isDestroyed = true;
+        }
+
+
+        // ------------------------------- Юнит с хранением Снаряда ---------------------------------
+        private AbilityToStoreUnit _storageUnit;
+
+        public AbilityToStoreUnit getStoreUnit() {
+            return this._storageUnit;
+        }
+
+        public boolean setStoreUnit(@NotNull AbilityToStoreUnit storeUnit) {
+            if(cell() != null) {
+                removeCell();
+            }
+            if(getStoreUnit() != null && _storageUnit != storeUnit) {
+                removeStoreUnit();
+            }
+
+            if(getStoreUnit() != null) {
+                return false;
+            }
+
+            _storageUnit = storeUnit;
+            _storageUnit.putBullet(this);
+            return true;
+        }
+
+        public boolean removeStoreUnit() {
+            if(getStoreUnit() == null) {
+                return false;
+            }
+
+            AbilityToStoreUnit storeUnit = _storageUnit;
+            _storageUnit = null;
+            storeUnit.extractBullet();
+            return true;
+        }
+
+        @Override
+        public boolean setCell(@NotNull AbstractCell cell) {
+            if(getStoreUnit() != null) {
+                removeStoreUnit();
+            }
+            return super.setCell(cell);
         }
 
         // ------------------------------- События ---------------------------------
@@ -376,17 +528,37 @@ public class Tank extends Unit implements CanDamaged {
             for(BulletActionListener listener: bulletListListener) {
                 BulletActionEvent event = new BulletActionEvent(listener);
                 event.setBullet(this);
-                event.setFromCell(oldPosition);
-                event.setToCell(newPosition);
+                if(oldPosition != null && oldPosition.getUnit() != null
+                        && oldPosition.getUnit() instanceof AbilityToStoreUnit) {
+                    event.setFromStorageUnit((AbilityToStoreUnit) oldPosition.getUnit());
+                }
+                else {
+                    event.setFromCell(oldPosition);
+                }
+                if(newPosition.getUnit() != null && newPosition.getUnit() instanceof AbilityToStoreUnit) {
+                    event.setToStorageUnit((AbilityToStoreUnit) newPosition.getUnit());
+                }
+                else {
+                    event.setToCell(newPosition);
+                }
                 listener.bulletChangedCell(event);
             }
         }
 
         private void fireObjectDestroyed(@NotNull AbstractCell oldPosition) {
-            for(TankActionListener listener: tankListListener) {
-                TankActionEvent event = new TankActionEvent(listener);
+            for(BulletActionListener listener: bulletListListener) {
+                BulletActionEvent event = new BulletActionEvent(listener);
                 event.setBullet(this);
                 event.setFromCell(oldPosition);
+                listener.objectDestroyed(event);
+            }
+        }
+
+        private void fireObjectDestroyed(@NotNull AbilityToStoreUnit oldPosition) {
+            for(BulletActionListener listener: bulletListListener) {
+                BulletActionEvent event = new BulletActionEvent(listener);
+                event.setBullet(this);
+                event.setFromStorageUnit(oldPosition);
                 listener.objectDestroyed(event);
             }
         }
