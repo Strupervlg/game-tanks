@@ -1,8 +1,7 @@
 package tanks.levels;
 
 import tanks.*;
-import tanks.event.BaseActionListener;
-import tanks.event.BrickWallActionListener;
+import tanks.event.DamageActionListener;
 import tanks.team.Team;
 
 import java.util.*;
@@ -57,7 +56,7 @@ public class TestLevel extends Level {
     }
 
     @Override
-    protected void placeTeams(Field field, BaseActionListener baseActionListener) {
+    protected void placeTeams(Field field, DamageActionListener baseActionListener) {
         Team team1 = new Team(new CellPosition(0, 1), new CellPosition(3, 1),
                 1, 0, Direction.east(), field, baseActionListener);
         Team team2 = new Team(new CellPosition(0, 2), new CellPosition(3, 2),
@@ -65,7 +64,7 @@ public class TestLevel extends Level {
     }
 
     @Override
-    protected void placeEnvironmentItems(Field field, BrickWallActionListener brickWallActionListener) {
+    protected void placeEnvironmentItems(Field field, DamageActionListener damageActionListener) {
         field.getCell(new CellPosition(2, 0)).putUnit(new BrickWall());
         field.getCell(new CellPosition(1, 3)).putUnit(new BrickWall());
 

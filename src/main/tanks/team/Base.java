@@ -2,16 +2,16 @@ package tanks.team;
 
 import org.jetbrains.annotations.NotNull;
 import tanks.*;
-import tanks.event.BaseActionEvent;
-import tanks.event.BaseActionListener;
-import tanks.event.BrickWallActionEvent;
-import tanks.event.BrickWallActionListener;
+import tanks.event.DamageActionEvent;
+import tanks.event.DamageActionListener;
 
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class Base extends Unit implements CanDamaged {
+
+    private Timer timer;
 
     Base(Team team) {
         this._isAlive = true;
@@ -36,8 +36,19 @@ public class Base extends Unit implements CanDamaged {
 
     @Override
     public void causeDamage(int damage) {
-        fireDamageCaused();
         this._isAlive = false;
+        fireDamageCaused();
+        timer = new Timer();
+        timer.schedule(new TimerDestroy(), 200);
+    }
+
+    class TimerDestroy extends TimerTask {
+
+        @Override
+        public void run() {
+            fireObjectDestroyed();
+            timer.cancel();
+        }
     }
 
     @Override
@@ -57,21 +68,29 @@ public class Base extends Unit implements CanDamaged {
     }
 
     // ------------------------------- События ---------------------------------
-    private ArrayList<BaseActionListener> baseListListener = new ArrayList<>();
+    private ArrayList<DamageActionListener> baseListListener = new ArrayList<>();
 
-    public void addBaseActionListener(BaseActionListener listener) {
+    public void addBaseActionListener(DamageActionListener listener) {
         baseListListener.add(listener);
     }
 
-    public void removeBaseActionListener(BaseActionListener listener) {
+    public void removeBaseActionListener(DamageActionListener listener) {
         baseListListener.remove(listener);
     }
 
     private void fireDamageCaused() {
-        for(BaseActionListener listener: baseListListener) {
-            BaseActionEvent event = new BaseActionEvent(listener);
-            event.setBase(this);
+        for(DamageActionListener listener: baseListListener) {
+            DamageActionEvent event = new DamageActionEvent(listener);
+            event.setCanDamagedUnit(this);
             listener.damageCaused(event);
+        }
+    }
+
+    private void fireObjectDestroyed() {
+        for(DamageActionListener listener: baseListListener) {
+            DamageActionEvent event = new DamageActionEvent(listener);
+            event.setCanDamagedUnit(this);
+            listener.objectDestroyed(event);
         }
     }
 }

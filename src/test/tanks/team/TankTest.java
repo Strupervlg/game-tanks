@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import tanks.*;
 import tanks.event.TankActionEvent;
 import tanks.event.TankActionListener;
@@ -110,7 +109,7 @@ class TankTest {
 
         // create tank
         Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                2, 1, Direction.north(), field, new BaseObserverTest());
+                2, 1, Direction.north(), field, new DamageObserverTest());
         tank = team.getTank();
         tank.setActive(true);
         tank.addTankActionListener(new EventsListener());
@@ -120,21 +119,21 @@ class TankTest {
     public void test_create_zeroLive() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Team(new CellPosition(0,2), new CellPosition(1,0),
-                0, 1, Direction.south(), field, new BaseObserverTest()));
+                0, 1, Direction.south(), field, new DamageObserverTest()));
     }
 
     @Test
     public void test_create_negativeLive() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Team(new CellPosition(0,2), new CellPosition(1,0),
-                        -2, 1, Direction.south(), field, new BaseObserverTest()));
+                        -2, 1, Direction.south(), field, new DamageObserverTest()));
     }
 
     @Test
     public void test_create_negativeRecharge() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Team(new CellPosition(0,2), new CellPosition(1,0),
-                        1, -2, Direction.south(), field, new BaseObserverTest()));
+                        1, -2, Direction.south(), field, new DamageObserverTest()));
     }
 
     @Test
@@ -170,7 +169,7 @@ class TankTest {
     @Test
     public void test_move_emptyCellInDirection() {
         Team team = new Team(new CellPosition(0,2), new CellPosition(1,0),
-                1, 1, Direction.south(), field, new BaseObserverTest());
+                1, 1, Direction.south(), field, new DamageObserverTest());
 
         tank = team.getTank();
         tank.addTankActionListener(new EventsListener());
@@ -319,7 +318,7 @@ class TankTest {
     public void test_shoot_TankActive() {
         field.removeTeam(tank.getTeam());
         Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                2, 0, Direction.north(), field, new BaseObserverTest());
+                2, 0, Direction.north(), field, new DamageObserverTest());
         tank = team.getTank();
         tank.setActive(true);
         tank.addTankActionListener(new EventsListener());
@@ -412,7 +411,7 @@ class TankTest {
         Bush bush = new Bush();
         field.getCell(new CellPosition(0, 2)).putUnit(bush);
         Team team = new Team(new CellPosition(1,2), new CellPosition(1,0),
-                2, 0, Direction.north(), field, new BaseObserverTest());
+                2, 0, Direction.north(), field, new DamageObserverTest());
         Tank tank2 = team.getTank();
         bush.putTank(tank2);
 
@@ -450,7 +449,7 @@ class TankTest {
     public void test_shoot_currentPositionIsStorageUnit() {
         field.removeTeam(tank.getTeam());
         Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                2, 0, Direction.north(), field, new BaseObserverTest());
+                2, 0, Direction.north(), field, new DamageObserverTest());
         tank = team.getTank();
         tank.setActive(true);
         tank.addTankActionListener(new EventsListener());
@@ -537,7 +536,7 @@ class TankTest {
 
             // create tank
             Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                    2, 0, Direction.north(), field, new BaseObserverTest());
+                    2, 0, Direction.north(), field, new DamageObserverTest());
             tank = team.getTank();
             tank.setActive(true);
             tank.addTankActionListener(new EventsListener());
@@ -591,7 +590,7 @@ class TankTest {
         @Test
         public void test_shoot_inNextCellIsTank() {
             Team team = new Team(new CellPosition(0,2), new CellPosition(1,2),
-                    1, 0, Direction.north(), field, new BaseObserverTest());
+                    1, 0, Direction.north(), field, new DamageObserverTest());
             tank.changeDirection(Direction.east());
             tank.shoot();
 
@@ -670,7 +669,7 @@ class TankTest {
         public void test_shoot_inLastCellIsStorageUnit() {
             field.removeTeam(tank.getTeam());
             Team team = new Team(new CellPosition(0,3), new CellPosition(1,0),
-                    1, 0, Direction.east(), field, new BaseObserverTest());
+                    1, 0, Direction.east(), field, new DamageObserverTest());
             tank = team.getTank();
             tank.addTankActionListener(new EventsListener());
             tank.setActive(true);

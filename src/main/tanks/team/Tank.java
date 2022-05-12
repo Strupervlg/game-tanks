@@ -17,6 +17,7 @@ public class Tank extends Unit implements CanDamaged {
         if(recharge < 0) {
             throw new IllegalArgumentException("Negative recharge");
         }
+        this._isDestroy = false;
         this._live = live;
         this._recharge = recharge;
         this._currentDirection = currentDirection;
@@ -52,11 +53,21 @@ public class Tank extends Unit implements CanDamaged {
         this._live -= countLive;
     }
 
+    private boolean _isDestroy;
+
+    public boolean isDestroy() {
+        return this._isDestroy;
+    }
+
     @Override
     public void causeDamage(int damage) {
+        if(isDestroy()) {
+           return;
+        }
         reduceLive(damage);
         fireDamageCaused();
         if(!isAlive()) {
+            this._isDestroy = true;
             timer = new Timer();
             timerTask = new TimerDestroy();
             timer.schedule(timerTask, 200);
@@ -67,7 +78,12 @@ public class Tank extends Unit implements CanDamaged {
 
         @Override
         public void run() {
-            fireObjectDestroyed(Tank.this, null, cell());
+            if(cell() == null) {
+                fireObjectDestroyed(Tank.this, null, getStoreUnit());
+            }
+            else {
+                fireObjectDestroyed(Tank.this, null, cell());
+            }
             removeCell();
             timer.cancel();
         }
@@ -330,10 +346,15 @@ public class Tank extends Unit implements CanDamaged {
         }
     }
 
-    private void fireObjectDestroyed(Bullet bullet, @NotNull AbilityToStoreUnit oldPosition) {
+    private void fireObjectDestroyed(Tank tank, Bullet bullet, @NotNull AbilityToStoreUnit oldPosition) {
         for(TankActionListener listener: tankListListener) {
             TankActionEvent event = new TankActionEvent(listener);
-            event.setBullet(bullet);
+            if(tank != null) {
+                event.setTank(this);
+            }
+            else {
+                event.setBullet(bullet);
+            }
             event.setFromStorageUnit(oldPosition);
             listener.objectDestroyed(event);
         }
@@ -358,7 +379,7 @@ public class Tank extends Unit implements CanDamaged {
         @Override
         public void objectDestroyed(@NotNull BulletActionEvent event) {
             if(event.getFromCell() == null) {
-                fireObjectDestroyed(event.getBullet(), event.getFromStorageUnit());
+                fireObjectDestroyed(null, event.getBullet(), event.getFromStorageUnit());
             }
             else {
                 fireObjectDestroyed(null, event.getBullet(), event.getFromCell());

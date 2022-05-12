@@ -3,6 +3,7 @@ package tanks;
 import org.jetbrains.annotations.NotNull;
 import tanks.event.*;
 import tanks.levels.Level;
+import tanks.team.Base;
 import tanks.team.Tank;
 import tanks.team.Team;
 
@@ -14,7 +15,7 @@ public class Game {
     private Field _field;
 
     public Game(@NotNull Level level) {
-        this._field = level.buildField(new BrickWallObserver(), new BaseObserver());
+        this._field = level.buildField(new DamageObserver());
 
         for(var team : _field.getTeams()) {
             team.getTank().addTankActionListener(new TankObserver());
@@ -146,34 +147,51 @@ public class Game {
         @Override
         public void objectDestroyed(@NotNull TankActionEvent event) {
             if(event.getTank() != null) {
-                fireObjectDestroyed(event.getTank(), event.getFromCell());
+                if(event.getFromStorageUnit() == null) {
+                    fireObjectDestroyed(event.getTank(), event.getFromCell());
+                }
+                else {
+                    fireObjectDestroyed(event.getTank(), event.getFromStorageUnit());
+                }
+                if(winner() != null) {
+                    return;
+                }
+                boolean isWinner = determineWinner();
+                if(isWinner) {
+                    fireGameOver();
+                }
             }
             else {
-                fireObjectDestroyed(event.getBullet(), event.getFromCell());
+                if(event.getFromStorageUnit() == null) {
+                    fireObjectDestroyed(event.getBullet(), event.getFromCell());
+                }
+                else {
+                    fireObjectDestroyed(event.getBullet(), event.getFromStorageUnit());
+                }
             }
         }
     }
 
-    private class BrickWallObserver implements BrickWallActionListener {
+    private class DamageObserver implements DamageActionListener {
 
         @Override
-        public void damageCaused(@NotNull BrickWallActionEvent event) {
-            fireDamageCaused(event.getBrickWall());
+        public void damageCaused(@NotNull DamageActionEvent event) {
+            fireDamageCaused((Unit)event.getCanDamagedUnit());
         }
 
         @Override
-        public void objectDestroyed(@NotNull BrickWallActionEvent event) {
-            fireObjectDestroyed(event.getBrickWall(), event.getFromCell());
+        public void objectDestroyed(@NotNull DamageActionEvent event) {
+            fireObjectDestroyed((Unit) event.getCanDamagedUnit(), event.getFromCell());
+            if(winner() != null) {
+                return;
+            }
+            if(event.getCanDamagedUnit() instanceof Base) {
+                boolean isWinner = determineWinner();
+                if(isWinner) {
+                    fireGameOver();
+                }
+            }
         }
-    }
-
-    private class BaseObserver implements BaseActionListener {
-
-        @Override
-        public void damageCaused(@NotNull BaseActionEvent event) {
-            fireDamageCaused(event.getBase());
-        }
-
     }
 
     private ArrayList<GameActionListener> gameActionListeners = new ArrayList<>();
@@ -270,6 +288,15 @@ public class Game {
             GameActionEvent event = new GameActionEvent(listener);
             event.setUnit(unit);
             event.setFromCell(oldPosition);
+            listener.objectDestroyed(event);
+        }
+    }
+
+    private void fireObjectDestroyed(@NotNull Unit unit, @NotNull AbilityToStoreUnit oldPosition) {
+        for(GameActionListener listener: gameActionListeners) {
+            GameActionEvent event = new GameActionEvent(listener);
+            event.setUnit(unit);
+            event.setFromStorageUnit(oldPosition);
             listener.objectDestroyed(event);
         }
     }

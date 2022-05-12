@@ -1,8 +1,8 @@
 package tanks;
 
 import org.jetbrains.annotations.NotNull;
-import tanks.event.BrickWallActionEvent;
-import tanks.event.BrickWallActionListener;
+import tanks.event.DamageActionEvent;
+import tanks.event.DamageActionListener;
 
 import java.util.ArrayList;
 import java.util.Timer;
@@ -16,11 +16,21 @@ public class BrickWall extends Unit implements CanDamaged {
     public BrickWall() {
 
     }
+    private boolean _isDestroy;
+
+    public boolean isDestroy() {
+        return this._isDestroy;
+    }
 
     @Override
     public void causeDamage(int damage) {
+        if(isDestroy()) {
+            return;
+        }
+        _isDestroy = true;
         fireDamageCaused();
         timer = new Timer();
+        timerTask = new TimerDestroy();
         timer.schedule(timerTask, 200);
     }
 
@@ -50,28 +60,28 @@ public class BrickWall extends Unit implements CanDamaged {
     }
 
     // ------------------------------- События ---------------------------------
-    private ArrayList<BrickWallActionListener> brickWallListListener = new ArrayList<>();
+    private ArrayList<DamageActionListener> brickWallListListener = new ArrayList<>();
 
-    public void addBrickWallActionListener(BrickWallActionListener listener) {
+    public void addBrickWallActionListener(DamageActionListener listener) {
         brickWallListListener.add(listener);
     }
 
-    public void removeBrickWallActionListener(BrickWallActionListener listener) {
+    public void removeBrickWallActionListener(DamageActionListener listener) {
         brickWallListListener.remove(listener);
     }
 
     private void fireDamageCaused() {
-        for(BrickWallActionListener listener: brickWallListListener) {
-            BrickWallActionEvent event = new BrickWallActionEvent(listener);
-            event.setBrickWall(this);
+        for(DamageActionListener listener: brickWallListListener) {
+            DamageActionEvent event = new DamageActionEvent(listener);
+            event.setCanDamagedUnit(this);
             listener.damageCaused(event);
         }
     }
 
     private void fireObjectDestroyed(@NotNull AbstractCell oldPosition) {
-        for(BrickWallActionListener listener: brickWallListListener) {
-            BrickWallActionEvent event = new BrickWallActionEvent(listener);
-            event.setBrickWall(this);
+        for(DamageActionListener listener: brickWallListListener) {
+            DamageActionEvent event = new DamageActionEvent(listener);
+            event.setCanDamagedUnit(this);
             event.setFromCell(oldPosition);
             listener.objectDestroyed(event);
         }

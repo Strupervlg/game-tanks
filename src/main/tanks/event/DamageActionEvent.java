@@ -2,21 +2,21 @@ package tanks.event;
 
 import org.jetbrains.annotations.NotNull;
 import tanks.AbstractCell;
-import tanks.BrickWall;
+import tanks.CanDamaged;
 
 import java.util.EventObject;
 
-public class BrickWallActionEvent extends EventObject {
+public class DamageActionEvent extends EventObject {
 
-    private BrickWall _brickWall;
+    private CanDamaged _canDamagedUnit;
     private AbstractCell fromCell;
 
-    public void setBrickWall(@NotNull BrickWall brickWall) {
-        this._brickWall = brickWall;
+    public void setCanDamagedUnit(@NotNull CanDamaged canDamagedUnit) {
+        this._canDamagedUnit = canDamagedUnit;
     }
 
-    public BrickWall getBrickWall() {
-        return this._brickWall;
+    public CanDamaged getCanDamagedUnit() {
+        return this._canDamagedUnit;
     }
 
     public void setFromCell(AbstractCell fromCell) {
@@ -33,7 +33,7 @@ public class BrickWallActionEvent extends EventObject {
      * @param source the object on which the Event initially occurred
      * @throws IllegalArgumentException if source is null
      */
-    public BrickWallActionEvent(Object source) {
+    public DamageActionEvent(Object source) {
         super(source);
     }
 }

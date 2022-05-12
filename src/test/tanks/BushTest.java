@@ -55,7 +55,7 @@ class BushTest {
 
         // create tank
         Team team = new Team(new CellPosition(0,1), new CellPosition(0,0),
-                2, 1, Direction.south(), field, new BaseObserverTest());
+                2, 1, Direction.south(), field, new DamageObserverTest());
         tank = team.getTank();
     }
 
@@ -71,7 +71,7 @@ class BushTest {
     @Test
     public void test_putTank_StorageUnitWithUnit() {
         Team team = new Team(new CellPosition(1,1), new CellPosition(1,0),
-                2, 1, Direction.north(), field, new BaseObserverTest());
+                2, 1, Direction.north(), field, new DamageObserverTest());
         Tank tank2 = team.getTank();
 
         bush.putTank(tank);
@@ -111,7 +111,7 @@ class BushTest {
     public void test_putBullet_tankInStorageUnit() {
         //Помещаем на поле второй танк и поворачиваем его вправо
         Team team = new Team(new CellPosition(1,1), new CellPosition(1,0),
-                2, 0, Direction.east(), field, new BaseObserverTest());
+                2, 0, Direction.east(), field, new DamageObserverTest());
         Tank tank2 = team.getTank();
         tank2.setActive(true);
         //Располагаем куст справа от второго танка

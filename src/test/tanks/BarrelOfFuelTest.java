@@ -3,11 +3,20 @@ package tanks;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class BarrelOfFuelTest {
 
     BarrelOfFuel barrelOfFuel;
+
+    private TimerTask timerTask;
+    private Timer timer;
+    private AbstractCell checkCell;
+    private Unit checkUnit;
+    private AbstractCell checkCell2;
 
     @BeforeEach
     void setUp() {
@@ -21,8 +30,19 @@ class BarrelOfFuelTest {
 
         barrelOfFuel.causeDamage(0);
 
-        assertNull(barrelOfFuel.cell());
-        assertNull(cell.getUnit());
+        timer = new Timer();
+        timerTask = new TimerCheckDestroy2();
+        checkCell = cell;
+        timer.schedule(timerTask, 500);
+    }
+
+    class TimerCheckDestroy2 extends TimerTask {
+
+        @Override
+        public void run() {
+            assertNull(barrelOfFuel.cell());
+            assertNull(checkCell.getUnit());
+        }
     }
 
     @Test
@@ -36,29 +56,32 @@ class BarrelOfFuelTest {
 
         barrelOfFuel.causeDamage(0);
 
-        assertNull(barrelOfFuel.cell());
-        assertNull(cell.getUnit());
-        assertNull(barrelOfFuel2.cell());
-        assertNull(cell2.getUnit());
+        timer = new Timer();
+        timerTask = new TimerCheckDestroy();
+        checkCell = cell;
+        checkUnit = barrelOfFuel2;
+        checkCell2 = cell2;
+        timer.schedule(timerTask, 500);
     }
 
-    // бочка взрывает другие предметы
-//    @Test
-//    public void test_causeDamage_neighborsIsBrickWall() {
-//        AbstractCell cell = new Ground();
-//        AbstractCell cell2 = new Ground();
-//        cell.setNeighbor(Direction.north(), cell2);
-//        barrelOfFuel.setCell(cell);
-//        BrickWall brickWall = new BrickWall();
-//        brickWall.setCell(cell2);
-//
-//        barrelOfFuel.causeDamage(1);
-//
-//        assertNull(barrelOfFuel.cell());
-//        assertNull(cell.getUnit());
-//        assertNull(brickWall.cell());
-//        assertNull(cell2.getUnit());
-//    }
+    @Test
+    public void test_causeDamage_neighborsIsBrickWall() {
+        AbstractCell cell = new Ground();
+        AbstractCell cell2 = new Ground();
+        cell.setNeighbor(Direction.north(), cell2);
+        barrelOfFuel.setCell(cell);
+        BrickWall brickWall = new BrickWall();
+        brickWall.setCell(cell2);
+
+        barrelOfFuel.causeDamage(1);
+
+        timer = new Timer();
+        timerTask = new TimerCheckDestroy();
+        checkCell = cell;
+        checkUnit = brickWall;
+        checkCell2 = cell2;
+        timer.schedule(timerTask, 500);
+    }
 
     @Test
     public void test_causeDamage_neighborsIsBush() {
@@ -71,10 +94,23 @@ class BarrelOfFuelTest {
 
         barrelOfFuel.causeDamage(0);
 
-        assertNull(barrelOfFuel.cell());
-        assertNull(cell.getUnit());
-        assertEquals(cell2, bush.cell());
-        assertEquals(cell2.getUnit(), bush);
+        timer = new Timer();
+        timerTask = new TimerCheckDestroy1();
+        checkCell = cell;
+        checkUnit = bush;
+        checkCell2 = cell2;
+        timer.schedule(timerTask, 500);
+    }
+
+    class TimerCheckDestroy1 extends TimerTask {
+
+        @Override
+        public void run() {
+            assertNull(barrelOfFuel.cell());
+            assertNull(checkCell.getUnit());
+            assertEquals(checkCell2, checkUnit.cell());
+            assertEquals(checkCell2.getUnit(), checkUnit);
+        }
     }
 
     @Test
@@ -90,10 +126,23 @@ class BarrelOfFuelTest {
 
         barrelOfFuel2.causeDamage(0);
 
-        assertNull(barrelOfFuel.cell());
-        assertNull(cell.getUnit());
-        assertNull(barrelOfFuel2.cell());
-        assertNull(cell3.getUnit());
+        timer = new Timer();
+        timerTask = new TimerCheckDestroy();
+        checkCell = cell;
+        checkUnit = barrelOfFuel2;
+        checkCell2 = cell3;
+        timer.schedule(timerTask, 500);
+    }
+
+    class TimerCheckDestroy extends TimerTask {
+
+        @Override
+        public void run() {
+            assertNull(barrelOfFuel.cell());
+            assertNull(checkCell.getUnit());
+            assertNull(checkUnit.cell());
+            assertNull(checkCell2.getUnit());
+        }
     }
 
     @Test

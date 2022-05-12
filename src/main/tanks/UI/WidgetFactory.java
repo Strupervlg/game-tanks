@@ -16,6 +16,8 @@ public class WidgetFactory {
     private final Map<Tank, TankWidget> _tanks = new HashMap<>();
     private final Map<Base, BaseWidget> _bases = new HashMap<>();
     private final Map<BrickWall, BrickWallWidget> _brickWalls = new HashMap<>();
+    private final Map<Bush, BushWidget> _bushes = new HashMap<>();
+    private final Map<BarrelOfFuel, BarrelOfFuelWidget> _barrelsOfFuel = new HashMap<>();
     private final Map<Tank.Bullet, BulletWidget> _bullets = new HashMap<>();
     private final Map<Team, Color> _teamColor = new HashMap<>();
 
@@ -47,6 +49,14 @@ public class WidgetFactory {
         else if(unit instanceof Tank.Bullet) {
             BulletWidget bulletWidget = create((Tank.Bullet) unit);
             item.addItem(bulletWidget);
+        }
+        else if(unit instanceof BarrelOfFuel) {
+            BarrelOfFuelWidget barrelOfFuelWidget = create((BarrelOfFuel) unit);
+            item.addItem(barrelOfFuelWidget);
+        }
+        else if(unit instanceof Bush) {
+            BushWidget bushWidget = create((Bush) unit);
+            item.addItem(bushWidget);
         }
 
         _cells.put(cell, item);
@@ -125,6 +135,34 @@ public class WidgetFactory {
 
     public void remove(@NotNull BrickWall brickWall) {
         _brickWalls.remove(brickWall);
+    }
+
+    public BushWidget create(@NotNull Bush bush) {
+        if(_bushes.containsKey(bush)) return _bushes.get(bush);
+
+        BushWidget item = new BushWidget();
+        _bushes.put(bush, item);
+        return item;
+    }
+
+    public BushWidget getWidget(@NotNull Bush bush) {
+        return _bushes.get(bush);
+    }
+
+    public BarrelOfFuelWidget create(@NotNull BarrelOfFuel barrelOfFuel) {
+        if(_barrelsOfFuel.containsKey(barrelOfFuel)) return _barrelsOfFuel.get(barrelOfFuel);
+
+        BarrelOfFuelWidget item = new BarrelOfFuelWidget();
+        _barrelsOfFuel.put(barrelOfFuel, item);
+        return item;
+    }
+
+    public BarrelOfFuelWidget getWidget(@NotNull BarrelOfFuel barrelOfFuel) {
+        return _barrelsOfFuel.get(barrelOfFuel);
+    }
+
+    public void remove(@NotNull BarrelOfFuel barrelOfFuel) {
+        _barrelsOfFuel.remove(barrelOfFuel);
     }
 
     public BulletWidget create(@NotNull Tank.Bullet bullet) {

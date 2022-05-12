@@ -98,7 +98,7 @@ class BrickWallTest {
     public void test_causeDamage_UnitIsNotInCell() {
         AbstractCell cell = new Ground();
 
-        brickWall.addBrickWallActionListener(new BrickWallObserverTest());
+        brickWall.addBrickWallActionListener(new DamageObserverTest());
 
         brickWall.causeDamage(0);
 

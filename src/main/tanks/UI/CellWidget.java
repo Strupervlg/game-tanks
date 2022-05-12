@@ -11,6 +11,7 @@ public abstract class CellWidget extends JPanel {
 
     public CellWidget() {
         setPreferredSize(new Dimension(CELL_SIZE, CELL_SIZE));
+        setLayout(new BorderLayout());
     }
 
     public void addItem(CellItemWidget item) {
@@ -19,7 +20,7 @@ public abstract class CellWidget extends JPanel {
     }
 
     public void removeItem() {
-        remove(0);
+        remove(getComponents().length-1);
         _cellItemWidget = null;
         repaint();
     }
