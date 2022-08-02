@@ -13,6 +13,9 @@ public class FirstLevel extends Level {
     private static final List<CellPosition> WATER_POSITIONS = Collections.unmodifiableList(
             Arrays.asList(new CellPosition(4, 0),
                     new CellPosition(4, 8)));
+    private static final List<CellPosition> GRASS_POSITIONS = Collections.unmodifiableList(
+            Arrays.asList(new CellPosition(1, 5),
+                    new CellPosition(6, 7)));
 
 
     @Override
@@ -31,6 +34,11 @@ public class FirstLevel extends Level {
     }
 
     @Override
+    protected boolean isGrassCell(CellPosition position) {
+        return GRASS_POSITIONS.contains(position);
+    }
+
+    @Override
     protected Map<CellPosition, AbstractCell> fieldCells() {
         Map<CellPosition, AbstractCell> cells = new HashMap<>();
 
@@ -38,7 +46,16 @@ public class FirstLevel extends Level {
             for(int x = 0; x < fieldWidth(); ++x) {
 
                 CellPosition position = new CellPosition(y, x);
-                AbstractCell cell = isWaterCell(position)? new Water() : new Ground();
+                AbstractCell cell = null;
+                if(isWaterCell(position)) {
+                    cell = new Water();
+                }
+                else if(isGrassCell(position)) {
+                    cell = new Grass();
+                }
+                else {
+                    cell = new Ground();
+                }
 
                 if(x > 0) {
                     cells.get(new CellPosition(position.row(), position.col()-1))

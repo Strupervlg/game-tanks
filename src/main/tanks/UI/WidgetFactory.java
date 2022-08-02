@@ -28,6 +28,9 @@ public class WidgetFactory {
         if(cell instanceof Water) {
             item = new WaterWidget();
         }
+        else if(cell instanceof Grass) {
+            item = new GrassWidget();
+        }
         else {
             item = new GroundWidget();
         }

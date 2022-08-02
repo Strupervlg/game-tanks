@@ -28,6 +28,11 @@ public class TestLevelWithMultipleTeams extends Level {
     }
 
     @Override
+    protected boolean isGrassCell(CellPosition position) {
+        return false;
+    }
+
+    @Override
     protected Map<CellPosition, AbstractCell> fieldCells() {
         Map<CellPosition, AbstractCell> cells = new HashMap<>();
 

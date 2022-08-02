@@ -25,6 +25,8 @@ public abstract class Level {
 
     protected abstract boolean isWaterCell(CellPosition position);
 
+    protected abstract boolean isGrassCell(CellPosition position);
+
     protected abstract Map<CellPosition, AbstractCell> fieldCells();
 
     protected abstract void placeTeams(Field field, DamageActionListener baseActionListener);
